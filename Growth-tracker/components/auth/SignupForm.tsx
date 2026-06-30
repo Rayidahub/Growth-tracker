@@ -92,7 +92,7 @@ export function SignupForm() {
     setIsEmailLoading(true)
 
     try {
-      const { error: authError } = await supabase.auth.signUp({
+      const { data, error: authError } = await supabase.auth.signUp({
         email: form.email.trim(),
         password: form.password,
         options: {
@@ -112,10 +112,18 @@ export function SignupForm() {
         return
       }
 
-      // Supabase sends a confirmation email by default
-      setSuccessMessage(
-        '🎉 Account created! Check your email for a confirmation link to activate your account.'
-      )
+      if (data.session) {
+        // Email confirmation is disabled — user is already signed in
+        setSuccessMessage('🎉 Account created! Redirecting you to the dashboard…')
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 1500)
+      } else {
+        // Email confirmation is enabled
+        setSuccessMessage(
+          '🎉 Account created! Check your email for a confirmation link to activate your account.'
+        )
+      }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.')
       console.error('[SignupForm] Unexpected error:', err)

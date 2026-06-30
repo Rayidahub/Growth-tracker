@@ -1,0 +1,11 @@
+{
+  "name": "growth-tracker-root",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix Growth-tracker run dev",
+    "build": "npm --prefix Growth-tracker run build",
+    "start": "npm --prefix Growth-tracker run start",
+    "lint": "npm --prefix Growth-tracker run lint",
+    "type-check": "npm --prefix Growth-tracker run type-check"
+  }
+}

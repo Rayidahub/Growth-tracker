@@ -9,6 +9,13 @@ import type { Database } from '@/types/database'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    '❌ Missing Supabase environment variables.\n' +
+    'Make sure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in .env.local'
+  )
+}
+
 /**
  * Creates a Supabase client for use in Server Components and Route Handlers.
  * Reads/writes auth cookies via next/headers — must be called inside

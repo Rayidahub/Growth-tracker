@@ -4,7 +4,7 @@
 // Email/password login + Google OAuth
 // Design: deep slate-to-indigo gradient background, rounded-2xl cards, gradient buttons
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -32,14 +32,30 @@ export function LoginForm() {
 
   const [form, setForm] = useState<FormState>({ email: '', password: '' })
   const [error, setError] = useState<string | null>(urlError)
+  const [resendSuccess, setResendSuccess] = useState<string | null>(null)
+  const [isEmailNotConfirmed, setIsEmailNotConfirmed] = useState(false)
   const [isEmailLoading, setIsEmailLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [isResendLoading, setIsResendLoading] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
 
   const supabase = createClient()
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1)
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [resendCooldown])
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setError(null)
+      setResendSuccess(null)
+      setIsEmailNotConfirmed(false)
       setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
     },
     []
@@ -48,6 +64,8 @@ export function LoginForm() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setResendSuccess(null)
+    setIsEmailNotConfirmed(false)
 
     if (!form.email || !form.password) {
       setError('Please enter your email and password.')
@@ -68,6 +86,7 @@ export function LoginForm() {
           setError('Incorrect email or password. Please try again.')
         } else if (authError.message.includes('Email not confirmed')) {
           setError('Please confirm your email address before logging in.')
+          setIsEmailNotConfirmed(true)
         } else {
           setError(authError.message)
         }
@@ -81,6 +100,42 @@ export function LoginForm() {
       console.error('[LoginForm] Unexpected error:', err)
     } finally {
       setIsEmailLoading(false)
+    }
+  }
+
+  const handleResendConfirmation = async () => {
+    setError(null)
+    setResendSuccess(null)
+
+    if (!form.email.trim()) {
+      setError('Please enter your email address first.')
+      return
+    }
+
+    setIsResendLoading(true)
+
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email: form.email.trim(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
+
+      if (resendError) {
+        setError(resendError.message)
+        console.error('[LoginForm] Resend confirmation error:', resendError.message)
+        return
+      }
+
+      setResendSuccess('Confirmation email resent! Check your inbox and spam folder.')
+      setResendCooldown(60)
+    } catch (err) {
+      setError('Failed to resend confirmation email. Please try again.')
+      console.error('[LoginForm] Resend confirmation unexpected error:', err)
+    } finally {
+      setIsResendLoading(false)
     }
   }
 
@@ -137,7 +192,7 @@ export function LoginForm() {
       </CardHeader>
 
       <CardContent className="space-y-5 px-8">
-        {/* Error alert */}
+        {/* Error / success alerts */}
         {error && (
           <Alert
             variant="destructive"
@@ -146,6 +201,40 @@ export function LoginForm() {
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="text-sm">{error}</AlertDescription>
           </Alert>
+        )}
+
+        {resendSuccess && (
+          <Alert className="rounded-xl border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
+            <Mail className="h-4 w-4" />
+            <AlertDescription className="text-sm">{resendSuccess}</AlertDescription>
+          </Alert>
+        )}
+
+        {isEmailNotConfirmed && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleResendConfirmation}
+            disabled={isResendLoading || !form.email.trim() || resendCooldown > 0}
+            className="w-full rounded-xl border-indigo-500/30 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 hover:border-indigo-500/50 transition-all duration-200 h-11"
+          >
+            {isResendLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sending…
+              </>
+            ) : resendCooldown > 0 ? (
+              <>
+                <Mail className="mr-2 h-4 w-4" />
+                Resend available in {resendCooldown}s
+              </>
+            ) : (
+              <>
+                <Mail className="mr-2 h-4 w-4" />
+                Resend confirmation email
+              </>
+            )}
+          </Button>
         )}
 
         {/* Google OAuth */}
@@ -203,7 +292,7 @@ export function LoginForm() {
                 Password
               </Label>
               <Link
-                href="/forgot-password"
+                href="/forgot-password-otp"
                 className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
                 tabIndex={-1}
               >
