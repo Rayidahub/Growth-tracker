@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: passwordError }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     // Find user
     const { data: userList, error: listError } = await supabase.auth.admin.listUsers()

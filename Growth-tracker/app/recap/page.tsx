@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/server'
 import { AppShell } from '@/components/layout/AppShell'
 import { ToastProvider } from '@/components/ui/Toast'
 import { RecapPageClient } from '@/components/recap/RecapPageClient'
-import { getCurrentWeekStart, getCurrentWeekEnd } from '@/lib/recap/types'
+import { getCurrentWeekStart, getCurrentWeekEnd, type WeeklyRecap } from '@/lib/recap/types'
 import { Sparkles } from 'lucide-react'
 
 export const metadata: Metadata = {
@@ -66,8 +66,8 @@ export default async function RecapPage() {
 
           {/* Client handles all interactivity */}
           <RecapPageClient
-            currentRecap={currentRecap as any}
-            history={history as any}
+            currentRecap={currentRecap as unknown as WeeklyRecap | null}
+            history={history as unknown as WeeklyRecap[]}
             weekStart={weekStart}
             weekEnd={weekEnd}
           />

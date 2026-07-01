@@ -9,8 +9,8 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import {
-  Save, Send, Clock, Code2, Palette, Github, FolderOpen,
-  Bot, BookOpen, AlertTriangle, Bug, FileText, BarChart3,
+  Save, Send, Clock, Code2, Github, FolderOpen,
+  Bot, BookOpen, Bug, BarChart3,
   CalendarDays, ChevronDown, Loader2, RefreshCw, Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -28,7 +28,6 @@ import {
   loadDraft,
   clearDraft,
   getTodayString,
-  toDateString,
 } from '@/lib/supabase/dailyLogs'
 import {
   dailyLogSchema,
@@ -41,6 +40,8 @@ import {
   type DailyLogFormValues,
 } from '@/lib/validations/dailyLog'
 import type { DailyLog } from '@/types/database'
+import { generateDayPlan } from '@/lib/roadmap/generator'
+import { completeTasks } from '@/lib/supabase/roadmap'
 
 // ─────────────────────────────────────────────────────────────
 // Props
@@ -52,6 +53,8 @@ interface DailyLogFormProps {
   existingLog?: DailyLog | null
   /** Override the initial date (YYYY-MM-DD) */
   initialDate?: string
+  startDate?: string
+  selectedStacks?: string[]
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -155,7 +158,7 @@ function TotalScoreRing({ total, max }: { total: number; max: number }) {
 // Main component
 // ─────────────────────────────────────────────────────────────
 
-export function DailyLogForm({ userId, existingLog, initialDate }: DailyLogFormProps) {
+export function DailyLogForm({ userId, existingLog, initialDate, startDate, selectedStacks }: DailyLogFormProps) {
   const { toast } = useToast()
   const router = useRouter()
   const today = getTodayString()
@@ -166,7 +169,6 @@ export function DailyLogForm({ userId, existingLog, initialDate }: DailyLogFormP
     control,
     handleSubmit,
     watch,
-    setValue,
     reset,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<DailyLogFormValues>({
@@ -289,6 +291,17 @@ export function DailyLogForm({ userId, existingLog, initialDate }: DailyLogFormP
       setCurrentLogId(data.id)
       clearDraft(userId, values.log_date)
       setHasDraft(false)
+
+      // Auto-complete today's roadmap tasks when a log is saved
+      if (startDate && (selectedStacks?.length ?? 0) > 0) {
+        const plan = generateDayPlan(values.log_date, startDate, selectedStacks ?? [])
+        await completeTasks(
+          userId,
+          plan.tasks.map((t) => t.id),
+          values.log_date
+        )
+      }
+
       toast({
         variant: 'success',
         title: currentLogId ? 'Log updated ✓' : 'Log saved ✓',

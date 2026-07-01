@@ -47,7 +47,7 @@ export async function createClient() {
  * Creates a Supabase client with the service role key (admin access).
  * ⚠️  NEVER expose this on the client. Use only in trusted server contexts.
  */
-export function createAdminClient() {
+export async function createAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!serviceRoleKey) {
@@ -57,7 +57,7 @@ export function createAdminClient() {
   }
 
   // Dynamic import to avoid bundling on client
-  const { createClient: createSupabaseClient } = require('@supabase/supabase-js')
+  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js')
   return createSupabaseClient<Database>(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,

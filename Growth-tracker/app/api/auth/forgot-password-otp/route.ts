@@ -59,7 +59,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email is required.' }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     // Find the user by email
     const { data: userList, error: listError } = await supabase.auth.admin.listUsers()
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
     console.log(`\n[DEV OTP] Password reset code for ${user.email}: ${otp}\n`)
 
     try {
-      await sendOTPEmail(user.email, otp)
+      await sendOTPEmail(user.email!, otp)
     } catch (emailErr) {
       console.error('[forgot-password-otp] email failed:', emailErr)
 

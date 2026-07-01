@@ -42,7 +42,7 @@ export async function POST() {
     }
     
     // Fetch ALL user repositories with pagination
-    let allRepos: any[] = []
+    let allRepos: unknown[] = []
     let page = 1
     let hasMorePages = true
     
@@ -86,7 +86,7 @@ export async function POST() {
     console.log('[GitHub Sync] Total repos fetched:', allRepos.length)
     
     // Fetch user's recent events from GitHub (also with pagination)
-    let allEvents: any[] = []
+    let allEvents: unknown[] = []
     let eventPage = 1
     let hasMoreEvents = true
     
@@ -126,11 +126,11 @@ export async function POST() {
     }
     
     // Filter for PushEvents (commits)
-    const pushEvents = allEvents.filter((e: any) => e.type === 'PushEvent')
-    
+    const pushEvents = allEvents.filter((e: unknown) => (e as { type: string }).type === 'PushEvent')
+
     // Calculate total commits
-    const totalCommits = pushEvents.reduce((sum: number, e: any) => {
-      return sum + (e.payload?.commits?.length || 0)
+    const totalCommits = pushEvents.reduce((sum: number, e: unknown) => {
+      return sum + (((e as { payload?: { commits?: unknown[] } }).payload?.commits?.length) || 0)
     }, 0)
     
     // Update last synced time and stats

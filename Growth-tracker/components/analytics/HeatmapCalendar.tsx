@@ -6,8 +6,6 @@
 
 import { useMemo, useState } from 'react'
 import type { HeatmapDay } from '@/lib/analytics/computeStats'
-import { cn } from '@/lib/utils'
-
 interface HeatmapCalendarProps {
   days: HeatmapDay[]
 }
@@ -133,8 +131,7 @@ export function HeatmapCalendar({ days }: HeatmapCalendarProps) {
                   fill={scoreToFill(day.score)}
                   opacity={scoreToOpacity(day.score)}
                   style={{ cursor: day.score !== null ? 'pointer' : 'default', transition: 'opacity 0.1s' }}
-                  onMouseEnter={(e) => {
-                    const rect = (e.target as SVGRectElement).getBoundingClientRect()
+                  onMouseEnter={() => {
                     setTooltip({ day, x: col * (CELL + GAP), y: row * (CELL + GAP) })
                   }}
                 />

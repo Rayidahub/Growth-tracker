@@ -6,8 +6,6 @@
 
 import { useMemo, useState } from 'react'
 import type { DailyPoint } from '@/lib/analytics/computeStats'
-import { cn } from '@/lib/utils'
-
 interface ScoreTrendChartProps {
   data: DailyPoint[]
   height?: number
@@ -32,7 +30,6 @@ export function ScoreTrendChart({ data, height = 200, showCommits = false }: Sco
     const chartW = W - PAD.left - PAD.right
     const chartH = H - PAD.top - PAD.bottom
 
-    const scores = data.map((d) => d.totalScore)
     const minScore = 0
     const maxScore = 100
 

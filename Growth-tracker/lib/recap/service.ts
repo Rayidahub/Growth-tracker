@@ -4,7 +4,6 @@
 
 import { createClient } from '@/lib/supabase/client'
 import type { WeeklyRecap } from '@/lib/recap/types'
-import { getCurrentWeekStart } from '@/lib/recap/types'
 
 export async function getRecapForWeek(
   userId: string,
@@ -35,7 +34,7 @@ export async function listRecaps(
     .limit(limit)
 
   if (error) return { data: [], error: error.message }
-  return { data: (data ?? []) as WeeklyRecap[], error: null }
+  return { data: (data ?? []) as unknown as WeeklyRecap[], error: null }
 }
 
 export async function deleteRecap(

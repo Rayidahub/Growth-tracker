@@ -4,7 +4,7 @@
 // The "Generate Recap" button with loading/streaming state.
 // On success, calls onRecapReady with the full RecapData.
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Sparkles, Loader2, RefreshCw, AlertCircle } from 'lucide-react'
 import type { RecapData } from '@/lib/recap/types'
 import { formatWeekRange, getCurrentWeekStart, getCurrentWeekEnd } from '@/lib/recap/types'
@@ -34,7 +34,7 @@ export function RecapGenerator({
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0])
-  const [msgIndex, setMsgIndex] = useState(0)
+  const msgIndexRef = useRef(0)
 
   const weekStart = getCurrentWeekStart()
   const weekEnd   = getCurrentWeekEnd()
@@ -44,15 +44,13 @@ export function RecapGenerator({
     setIsGenerating(true)
     setError(null)
     setLoadingMsg(LOADING_MESSAGES[0])
-    setMsgIndex(0)
+    msgIndexRef.current = 0
 
     // Cycle through loading messages
     const interval = setInterval(() => {
-      setMsgIndex((i) => {
-        const next = Math.min(i + 1, LOADING_MESSAGES.length - 1)
-        setLoadingMsg(LOADING_MESSAGES[next])
-        return next
-      })
+      const next = Math.min(msgIndexRef.current + 1, LOADING_MESSAGES.length - 1)
+      msgIndexRef.current = next
+      setLoadingMsg(LOADING_MESSAGES[next])
     }, 2800)
 
     try {
@@ -70,8 +68,8 @@ export function RecapGenerator({
       }
 
       onRecapReady(data.recap, data.recapText, data.weekStart)
-    } catch (err: any) {
-      setError(err.message ?? 'Unexpected error. Please try again.')
+    } catch (err: unknown) {
+      setError((err as Error).message ?? 'Unexpected error. Please try again.')
     } finally {
       clearInterval(interval)
       setIsGenerating(false)
@@ -141,7 +139,7 @@ export function RecapGenerator({
         ) : hasExistingRecap ? (
           <><RefreshCw className="h-4 w-4" /> Regenerate Recap</>
         ) : (
-          <><Sparkles className="h-4 w-4" /> Generate This Week's Recap</>
+          <><Sparkles className="h-4 w-4" /> Generate This Week&apos;s Recap</>
         )}
       </button>
 

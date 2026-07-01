@@ -28,7 +28,6 @@ export function QuickCheckin({ userId }: QuickCheckinProps) {
 
   const [submitted, setSubmitted] = useState(false)
   const [savedScore, setSavedScore] = useState<number | null>(null)
-  const [existingLogId, setExistingLogId] = useState<string | null>(null)
   const [isCheckingToday, setIsCheckingToday] = useState(true)
 
   const {
@@ -56,7 +55,6 @@ export function QuickCheckin({ userId }: QuickCheckinProps) {
     async function check() {
       const { data } = await getDailyLog(userId, today)
       if (data) {
-        setExistingLogId(data.id)
         setSavedScore(data.total_score)
         setSubmitted(true)
         // Pre-fill with existing data
@@ -108,7 +106,6 @@ export function QuickCheckin({ userId }: QuickCheckinProps) {
     }
 
     if (data) {
-      setExistingLogId(data.id)
       setSavedScore(data.total_score)
       setSubmitted(true)
       toast({
@@ -129,7 +126,7 @@ export function QuickCheckin({ userId }: QuickCheckinProps) {
               <CheckCircle2 className="h-5 w-5 text-emerald-400" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-white">Today's check-in done</p>
+              <p className="text-sm font-semibold text-white">Today&apos;s check-in done</p>
               <p className="text-xs text-slate-400">{today}</p>
             </div>
           </div>
@@ -235,7 +232,7 @@ export function QuickCheckin({ userId }: QuickCheckinProps) {
         {/* Row 2: Score slider */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-slate-400">Today's Score</label>
+            <label className="text-xs font-medium text-slate-400">Today&apos;s Score</label>
             <span className="text-sm font-bold text-indigo-400 tabular-nums">{quickTotal}<span className="text-xs font-normal text-slate-600"> /100</span></span>
           </div>
           <div className="relative h-2 w-full overflow-hidden rounded-full bg-white/10">

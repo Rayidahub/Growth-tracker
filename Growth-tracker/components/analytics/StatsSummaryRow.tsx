@@ -5,7 +5,7 @@
 
 import {
   TrendingUp, TrendingDown, Flame, Clock,
-  GitCommit, CalendarCheck, Zap, Award,
+  GitCommit, Award,
 } from 'lucide-react'
 import type { OverallStats } from '@/lib/analytics/computeStats'
 import { cn } from '@/lib/utils'
@@ -16,7 +16,6 @@ interface StatsSummaryRowProps {
 
 export function StatsSummaryRow({ stats }: StatsSummaryRowProps) {
   const velocityPositive = stats.scoreVelocity > 0
-  const velocityFlat = stats.scoreVelocity === 0
 
   const cards = [
     {

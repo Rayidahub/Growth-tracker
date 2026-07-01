@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, BookOpen, BarChart3, History,
-  Settings, LogOut, Zap, Menu, X, ChevronRight, Sparkles,
+  Settings, LogOut, Zap, Menu, X, ChevronRight, Sparkles, Map,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -21,6 +21,7 @@ interface AppShellProps {
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/log',       label: 'Daily Log',  icon: BookOpen        },
+  { href: '/roadmap',   label: 'Roadmap',    icon: Map             },
   { href: '/analytics', label: 'Analytics',  icon: BarChart3       },
   { href: '/recap',     label: 'AI Recap',   icon: Sparkles        },
   { href: '/history',   label: 'History',    icon: History         },

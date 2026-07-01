@@ -20,10 +20,6 @@ interface FormState {
   password: string
 }
 
-interface AuthError {
-  message: string
-}
-
 export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()

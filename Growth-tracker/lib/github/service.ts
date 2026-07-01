@@ -158,7 +158,7 @@ export async function syncGitHubActivity(
       return {
         success: true,
         totalCommits: cached?.total_commits ?? 0,
-        repoCount: (cached?.repo_breakdown as any[])?.length ?? 0,
+        repoCount: cached?.repo_breakdown?.length ?? 0,
         prsTotal: ((cached?.prs_opened ?? 0) + (cached?.prs_merged ?? 0)),
         error: null,
         alreadySynced: true,
@@ -170,8 +170,8 @@ export async function syncGitHubActivity(
   let summary
   try {
     summary = await fetchDailyActivity(token, profile.github_username, today)
-  } catch (err: any) {
-    return { success: false, totalCommits: 0, repoCount: 0, prsTotal: 0, error: err.message, alreadySynced: false }
+  } catch (err: unknown) {
+    return { success: false, totalCommits: 0, repoCount: 0, prsTotal: 0, error: (err as Error).message, alreadySynced: false }
   }
 
   // 5. Upsert github_activity row
@@ -180,12 +180,12 @@ export async function syncGitHubActivity(
     activity_date: today,
     total_commits: summary.totalCommits,
     repos_committed: summary.reposCommitted,
-    repo_breakdown: summary.repoBreakdown as any,
-    languages: summary.languages as any,
+    repo_breakdown: summary.repoBreakdown as unknown,
+    languages: summary.languages as unknown,
     prs_opened: summary.prsOpened,
     prs_merged: summary.prsMerged,
     prs_reviewed: summary.prsReviewed,
-    pr_details: summary.prDetails as any,
+    pr_details: summary.prDetails as unknown,
     issues_opened: summary.issuesOpened,
     issues_closed: summary.issuesClosed,
     commit_messages: summary.commitMessages,

@@ -128,7 +128,6 @@ function PRChip({ pr }: { pr: PRDetail }) {
 }
 
 export function GitHubActivityPanel({
-  userId,
   isConnected,
   githubUsername,
   lastSynced,
@@ -163,8 +162,8 @@ export function GitHubActivityPanel({
         }
         setLastSyncTime(new Date().toISOString())
       }
-    } catch (err: any) {
-      setSyncError(err.message ?? 'Sync failed')
+    } catch (err: unknown) {
+      setSyncError((err as Error).message ?? 'Sync failed')
     } finally {
       setIsSyncing(false)
     }

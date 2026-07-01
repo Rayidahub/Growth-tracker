@@ -10,7 +10,7 @@ import {
   TrendingUp, TrendingDown, Minus, Copy, Check,
   Sparkles, Target, Zap,
 } from 'lucide-react'
-import type { RecapData, PillarComparison, RecapWin, RecapGap, RecapActionItem } from '@/lib/recap/types'
+import type { RecapData, PillarComparison } from '@/lib/recap/types'
 import { cn } from '@/lib/utils'
 
 interface RecapDisplayProps {
@@ -96,8 +96,6 @@ function PriorityBadge({ priority }: { priority: 'high' | 'medium' | 'low' }) {
 export function RecapDisplay({
   recap,
   recapText,
-  weekStart,
-  weekEnd,
   generatedAt,
 }: RecapDisplayProps) {
   const [copied, setCopied] = useState(false)

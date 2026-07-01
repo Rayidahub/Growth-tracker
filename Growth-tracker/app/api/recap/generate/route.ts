@@ -50,9 +50,13 @@ export async function POST(request: NextRequest) {
       .order('log_date', { ascending: true }),
   ])
 
-  const profile    = profileResult.data ?? {}
+  const profile    = profileResult.data
   const thisLogs   = thisWeekResult.data  ?? []
   const prevLogs   = prevWeekResult.data  ?? []
+
+  if (!profile) {
+    return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+  }
 
   if (thisLogs.length === 0 && prevLogs.length === 0) {
     return NextResponse.json(
@@ -62,7 +66,7 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Build prompt ──────────────────────────────────────────
-  const prompt = buildRecapPrompt(thisLogs as any, prevLogs as any, profile)
+  const prompt = buildRecapPrompt(thisLogs, prevLogs, profile)
 
   // ── Call Groq API (FREE!) ─────────────────────────────────
   const groqKey = process.env.GROQ_API_KEY
@@ -123,10 +127,10 @@ export async function POST(request: NextRequest) {
         ],
       }),
     })
-  } catch (err: any) {
-    console.error('[Recap] Network error calling Groq:', err)
+  } catch (_err: unknown) {
+    console.error('[Recap] Network error calling Groq:', _err)
     return NextResponse.json(
-      { error: `Failed to reach Groq API: ${err.message}` },
+      { error: `Failed to reach Groq API: ${(_err as Error).message}` },
       { status: 502 }
     )
   }
@@ -158,8 +162,8 @@ export async function POST(request: NextRequest) {
   let groqData
   try {
     groqData = await groqResponse.json()
-  } catch (err) {
-    console.error('[Recap] Failed to parse Groq response')
+  } catch (_err) {
+    console.error('[Recap] Failed to parse Groq response', _err)
     return NextResponse.json(
       { error: 'Invalid response from Groq API' },
       { status: 502 }
@@ -185,8 +189,8 @@ export async function POST(request: NextRequest) {
     // Strip any accidental markdown fences
     const cleaned = rawText.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim()
     recapData = JSON.parse(cleaned)
-  } catch (err) {
-    console.error('[Recap] JSON parse failed. Raw:', rawText.slice(0, 500))
+  } catch (_err) {
+    console.error('[Recap] JSON parse failed. Raw:', rawText.slice(0, 500), _err)
     return NextResponse.json(
       { error: 'Groq returned malformed JSON. Please try again.' },
       { status: 500 }
@@ -213,9 +217,9 @@ export async function POST(request: NextRequest) {
         user_id:             user.id,
         week_start:          weekStart,
         week_end:            weekEnd,
-        logs_snapshot:       thisLogs  as any,
-        prev_logs_snapshot:  prevLogs  as any,
-        recap_data:          recapData as any,
+        logs_snapshot:       thisLogs  as unknown,
+        prev_logs_snapshot:  prevLogs  as unknown,
+        recap_data:          recapData as unknown,
         recap_text:          recapText,
         model_used:          model,
         tokens_used:         tokensUsed,
@@ -245,7 +249,7 @@ export async function POST(request: NextRequest) {
       weekStart,
       weekEnd,
     })
-  } catch (saveError: any) {
+  } catch (saveError: unknown) {
     console.error('[Recap] Save error:', saveError)
     return NextResponse.json({ 
       recap: recapData, 

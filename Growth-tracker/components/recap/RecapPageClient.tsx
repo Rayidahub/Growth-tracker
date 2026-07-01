@@ -123,7 +123,7 @@ export function RecapPageClient({
               <div className="text-3xl mb-3">✨</div>
               <p className="text-sm font-semibold text-white mb-1">No recap yet for {formatWeekRange(weekStart, weekEnd)}</p>
               <p className="text-xs text-slate-500">
-                Click "Generate This Week's Recap" to get Claude's analysis of your logs.
+                Click &quot;Generate This Week&apos;s Recap&quot; to get Claude&apos;s analysis of your logs.
               </p>
             </div>
           </div>

@@ -5,7 +5,7 @@
 // Saves directly to Supabase profiles table via client.
 
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
@@ -13,7 +13,8 @@ import { useToast } from '@/components/ui/Toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Github, Globe, Linkedin, User, Loader2, Save, Lock, KeyRound, Eye, EyeOff } from 'lucide-react'
+import { Github, Globe, Linkedin, User, CalendarDays, Loader2, Save, Lock, KeyRound, Eye, EyeOff } from 'lucide-react'
+import { StackSelector } from './StackSelector'
 import type { Profile } from '@/types/database'
 
 const PHASES = ['Phase 1', 'Phase 2', 'Phase 3', 'Phase 4']
@@ -21,6 +22,8 @@ const PHASES = ['Phase 1', 'Phase 2', 'Phase 3', 'Phase 4']
 const settingsSchema = z.object({
   full_name:       z.string().min(1, 'Name is required').max(80),
   current_phase:   z.enum(['Phase 1', 'Phase 2', 'Phase 3', 'Phase 4']),
+  start_date:      z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date'),
+  learning_stacks: z.array(z.string()).default([]),
   github_username: z.string().max(39).nullable().optional(),
   portfolio_url:   z.string().url('Enter a valid URL').or(z.literal('')).nullable().optional(),
   linkedin_url:    z.string().url('Enter a valid URL').or(z.literal('')).nullable().optional(),
@@ -53,6 +56,7 @@ export function SettingsForm({ userId, profile }: SettingsFormProps) {
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isDirty },
   } = useForm<SettingsFormValues>({
@@ -60,6 +64,8 @@ export function SettingsForm({ userId, profile }: SettingsFormProps) {
     defaultValues: {
       full_name:       profile?.full_name ?? '',
       current_phase:   (profile?.current_phase as SettingsFormValues['current_phase']) ?? 'Phase 1',
+      start_date:      profile?.start_date ?? new Date().toISOString().slice(0, 10),
+      learning_stacks: profile?.learning_stacks ?? [],
       github_username: profile?.github_username ?? '',
       portfolio_url:   profile?.portfolio_url ?? '',
       linkedin_url:    profile?.linkedin_url ?? '',
@@ -75,6 +81,8 @@ export function SettingsForm({ userId, profile }: SettingsFormProps) {
       .update({
         full_name:       values.full_name,
         current_phase:   values.current_phase,
+        start_date:      values.start_date,
+        learning_stacks: values.learning_stacks,
         github_username: values.github_username || null,
         portfolio_url:   values.portfolio_url || null,
         linkedin_url:    values.linkedin_url || null,
@@ -233,6 +241,39 @@ export function SettingsForm({ userId, profile }: SettingsFormProps) {
             </label>
           ))}
         </div>
+      </div>
+
+      {/* Start date */}
+      <div className="space-y-1.5">
+        <Label className="text-sm text-slate-300">Start Date</Label>
+        <p className="text-xs text-slate-600">Used to calculate your journey day and analytics timeline</p>
+        <div className="relative">
+          <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+          <Input
+            type="date"
+            {...register('start_date')}
+            className="h-11 rounded-xl border-white/10 bg-white/5 pl-9 text-white focus:border-indigo-500 [color-scheme:dark]"
+          />
+        </div>
+        {errors.start_date && <p className="text-xs text-red-400">{errors.start_date.message}</p>}
+      </div>
+
+      {/* Learning stacks */}
+      <div className="space-y-2">
+        <div>
+          <Label className="text-sm text-slate-300">Learning Stacks</Label>
+          <p className="text-xs text-slate-600">
+            Pick the technologies and areas you want to learn. Your 96-week roadmap is built from these choices.
+          </p>
+        </div>
+        <Controller
+          name="learning_stacks"
+          control={control}
+          render={({ field }) => (
+            <StackSelector selected={field.value ?? []} onChange={field.onChange} />
+          )}
+        />
+        {errors.learning_stacks && <p className="text-xs text-red-400">{errors.learning_stacks.message}</p>}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

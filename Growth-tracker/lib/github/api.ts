@@ -171,27 +171,24 @@ export async function fetchDailyActivity(
   targetDate?: string
 ): Promise<DailyGitHubSummary> {
   const date = targetDate ?? new Date().toISOString().slice(0, 10)
-  const dayStart = `${date}T00:00:00Z`
-  const dayEnd = `${date}T23:59:59Z`
-
   const user = await getGitHubUser(token)
 
   // Fetch user events (up to 300, last 3 pages)
-  let events: any[] = []
+  let events: unknown[] = []
   try {
-    events = await ghFetchAll<any>(`/users/${username}/events`, token, 3)
+    events = await ghFetchAll<unknown>(`/users/${username}/events`, token, 3)
   } catch {
     events = []
   }
 
   // Filter to target date
-  const todayEvents = events.filter((e: any) => {
-    const d = e.created_at?.slice(0, 10)
+  const todayEvents = events.filter((e: unknown) => {
+    const d = (e as { created_at?: string }).created_at?.slice(0, 10)
     return d === date
   })
 
   // ── Commits from PushEvents ──────────────────────────────
-  const pushEvents = todayEvents.filter((e: any) => e.type === 'PushEvent') as GHPushEvent[]
+  const pushEvents = todayEvents.filter((e: unknown) => (e as { type: string }).type === 'PushEvent') as GHPushEvent[]
 
   const repoCommitMap = new Map<string, {
     commits: number; messages: string[]; url: string; additions: number; deletions: number
@@ -200,7 +197,7 @@ export async function fetchDailyActivity(
   for (const evt of pushEvents) {
     const repoName = evt.repo.name
     const commitCount = evt.payload.commits?.length ?? evt.payload.size ?? 0
-    const messages = (evt.payload.commits ?? []).map((c: any) => c.message.split('\n')[0])
+    const messages = (evt.payload.commits ?? []).map((c) => c.message.split('\n')[0])
 
     if (!repoCommitMap.has(repoName)) {
       repoCommitMap.set(repoName, { commits: 0, messages: [], url: `https://github.com/${repoName}`, additions: 0, deletions: 0 })
@@ -260,8 +257,8 @@ export async function fetchDailyActivity(
   repoBreakdown.sort((a, b) => b.commits - a.commits)
 
   // ── PR events ────────────────────────────────────────────
-  const prEvents = todayEvents.filter((e: any) =>
-    e.type === 'PullRequestEvent'
+  const prEvents = todayEvents.filter((e: unknown) =>
+    (e as { type: string }).type === 'PullRequestEvent'
   ) as GHPREvent[]
 
   let prsOpened = 0
@@ -291,16 +288,16 @@ export async function fetchDailyActivity(
   }
 
   // PR reviews
-  const reviewEvents = todayEvents.filter((e: any) => e.type === 'PullRequestReviewEvent')
+  const reviewEvents = todayEvents.filter((e: unknown) => (e as { type: string }).type === 'PullRequestReviewEvent')
   prsReviewed = reviewEvents.length
 
   // ── Issue events ─────────────────────────────────────────
-  const issueEvents = todayEvents.filter((e: any) => e.type === 'IssuesEvent') as GHIssueEvent[]
+  const issueEvents = todayEvents.filter((e: unknown) => (e as { type: string }).type === 'IssuesEvent') as GHIssueEvent[]
   const issuesOpened = issueEvents.filter((e) => e.payload.action === 'opened').length
   const issuesClosed = issueEvents.filter((e) => e.payload.action === 'closed').length
 
   // ── Stars received ───────────────────────────────────────
-  const watchEvents = todayEvents.filter((e: any) => e.type === 'WatchEvent')
+  const watchEvents = todayEvents.filter((e: unknown) => (e as { type: string }).type === 'WatchEvent')
   const starsReceived = watchEvents.length
 
   return {

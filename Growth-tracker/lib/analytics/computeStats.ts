@@ -3,7 +3,7 @@
 // No Supabase dependency — pass the data in, get stats back. Fully testable.
 
 import type { DailyLog } from '@/types/database'
-import { SCORE_CONFIG, TOTAL_MAX } from '@/lib/validations/dailyLog'
+import { SCORE_CONFIG } from '@/lib/validations/dailyLog'
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -122,7 +122,7 @@ export function computeOverallStats(
   let currentStreak = 0
   let longestStreak = 0
   let tempStreak = 0
-  let checkDate = new Date()
+  const checkDate = new Date()
 
   // Current streak — walk backwards from today
   for (let i = 0; i < 365; i++) {

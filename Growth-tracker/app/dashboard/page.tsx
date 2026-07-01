@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/server'
 import { QuickCheckin } from '@/components/daily-log/QuickCheckin'
 import { LogStreak } from '@/components/daily-log/LogStreak'
 import { RecentLogs } from '@/components/daily-log/RecentLogs'
+import { DailyTasks } from '@/components/roadmap/DailyTasks'
 import { ToastProvider } from '@/components/ui/Toast'
 import {
   Zap, LogOut, Settings, BookOpen, TrendingUp,
@@ -28,7 +29,7 @@ export default async function DashboardPage() {
   const [profileResult, logsResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('full_name, current_phase, start_date, github_username')
+      .select('full_name, current_phase, start_date, github_username, learning_stacks')
       .eq('id', user.id)
       .single(),
     supabase
@@ -188,6 +189,13 @@ export default async function DashboardPage() {
             <div className="space-y-5">
               {/* Quick check-in */}
               <QuickCheckin userId={user.id} />
+
+              {/* Today's roadmap tasks */}
+              <DailyTasks
+                userId={user.id}
+                startDate={profile?.start_date ?? new Date().toISOString().slice(0, 10)}
+                selectedStacks={profile?.learning_stacks ?? []}
+              />
 
               {/* Streak calendar */}
               <LogStreak logs={logs} />

@@ -39,6 +39,12 @@ export default async function LogPage({
     existingLog = data
   }
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('start_date, learning_stacks')
+    .eq('id', user.id)
+    .single()
+
   return (
     <ToastProvider>
       <div className="min-h-screen bg-[#0a0f1e]">
@@ -82,6 +88,8 @@ export default async function LogPage({
             userId={user.id}
             existingLog={existingLog}
             initialDate={requestedDate}
+            startDate={profile?.start_date ?? new Date().toISOString().slice(0, 10)}
+            selectedStacks={profile?.learning_stacks ?? []}
           />
         </div>
       </div>
