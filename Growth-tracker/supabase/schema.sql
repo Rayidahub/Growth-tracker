@@ -20,6 +20,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   linkedin_url    TEXT,
   avatar_url      TEXT,
   learning_stacks TEXT[]      NOT NULL DEFAULT '{}',
+  push_notifications_enabled  BOOLEAN NOT NULL DEFAULT false,
+  daily_reminder_enabled      BOOLEAN NOT NULL DEFAULT false,
+  weekly_recap_push_enabled   BOOLEAN NOT NULL DEFAULT false,
+  reminder_time               TEXT    NOT NULL DEFAULT '09:00',
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
@@ -90,7 +94,7 @@ CREATE TABLE IF NOT EXISTS public.task_completions (
   id          UUID        NOT NULL DEFAULT uuid_generate_v4(),
   user_id     UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   task_id     TEXT        NOT NULL,
-  task_date   DATE        NOT NULL,
+  task_date   DATE        NOT NULL DEFAULT CURRENT_DATE,
   completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
   CONSTRAINT task_completions_pkey PRIMARY KEY (id),
@@ -108,6 +112,32 @@ CREATE POLICY "Users manage own task completions"
   WITH CHECK (auth.uid() = user_id);
 
 GRANT ALL ON public.task_completions TO authenticated;
+
+-- ============================================================
+-- TABLE: push_subscriptions
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.push_subscriptions (
+  id         UUID        NOT NULL DEFAULT uuid_generate_v4(),
+  user_id    UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  endpoint   TEXT        NOT NULL,
+  p256dh     TEXT        NOT NULL,
+  auth       TEXT        NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT push_subscriptions_pkey PRIMARY KEY (id),
+  CONSTRAINT push_subscriptions_endpoint_key UNIQUE (endpoint)
+);
+
+CREATE INDEX IF NOT EXISTS push_subscriptions_user_id_idx ON public.push_subscriptions(user_id);
+
+ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users manage own push subscriptions"
+  ON public.push_subscriptions FOR ALL
+  USING  (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+GRANT ALL ON public.push_subscriptions TO authenticated;
 
 -- ============================================================
 -- INDEXES

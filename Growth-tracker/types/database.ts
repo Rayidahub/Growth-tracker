@@ -10,8 +10,9 @@ export interface Database {
       task_completions:     { Row: TaskCompletion;     Insert: TaskCompletionInsert;     Update: TaskCompletionUpdate;     Relationships: [] }
       password_reset_otps:  { Row: PasswordResetOtp;   Insert: PasswordResetOtpInsert;   Update: PasswordResetOtpUpdate;   Relationships: [] }
       weekly_recaps:        { Row: WeeklyRecap;        Insert: WeeklyRecapInsert;        Update: WeeklyRecapUpdate;        Relationships: [] }
+      push_subscriptions:   { Row: PushSubscription;   Insert: PushSubscriptionInsert;   Update: PushSubscriptionUpdate;   Relationships: [] }
       github_tokens:        { Row: GitHubToken;        Insert: GitHubTokenInsert;        Update: GitHubTokenUpdate;        Relationships: [] }
-      github_activity: { Row: GitHubActivity; Insert: GitHubActivityInsert; Update: GitHubActivityUpdate; Relationships: [] }
+      github_activity:      { Row: GitHubActivity;     Insert: GitHubActivityInsert;     Update: GitHubActivityUpdate;     Relationships: [] }
     }
     Views: Record<string, never>
     Functions: Record<string, never>
@@ -26,12 +27,16 @@ export interface Profile extends Record<string, unknown> {
   portfolio_url: string | null; linkedin_url: string | null
   avatar_url: string | null
   learning_stacks: string[]
+  push_notifications_enabled: boolean
+  daily_reminder_enabled: boolean
+  weekly_recap_push_enabled: boolean
+  reminder_time: string
   github_connected: boolean
   github_last_synced: string | null
   github_user_id: number | null
   created_at: string; updated_at: string
 }
-export type ProfileInsert = Omit<Profile, 'created_at' | 'updated_at'> & { created_at?: string; updated_at?: string } & Record<string, unknown>
+export type ProfileInsert = Omit<Profile, 'created_at' | 'updated_at' | 'push_notifications_enabled' | 'daily_reminder_enabled' | 'weekly_recap_push_enabled' | 'reminder_time'> & { created_at?: string; updated_at?: string; push_notifications_enabled?: boolean; daily_reminder_enabled?: boolean; weekly_recap_push_enabled?: boolean; reminder_time?: string } & Record<string, unknown>
 export type ProfileUpdate = Partial<Omit<Profile, 'id' | 'created_at'>> & Record<string, unknown>
 
 export interface DailyLog extends Record<string, unknown> {
@@ -70,6 +75,13 @@ export interface WeeklyRecap extends Record<string, unknown> {
 }
 export type WeeklyRecapInsert = Omit<WeeklyRecap, 'id' | 'created_at'> & { id?: string; created_at?: string } & Record<string, unknown>
 export type WeeklyRecapUpdate = Partial<Omit<WeeklyRecap, 'id' | 'user_id' | 'created_at'>> & Record<string, unknown>
+
+export interface PushSubscription extends Record<string, unknown> {
+  id: string; user_id: string; endpoint: string; p256dh: string; auth: string
+  created_at: string
+}
+export type PushSubscriptionInsert = Omit<PushSubscription, 'id' | 'created_at'> & { id?: string; created_at?: string } & Record<string, unknown>
+export type PushSubscriptionUpdate = Partial<Omit<PushSubscription, 'id' | 'user_id' | 'created_at'>> & Record<string, unknown>
 
 export interface GitHubToken extends Record<string, unknown> {
   id: string; user_id: string; access_token: string

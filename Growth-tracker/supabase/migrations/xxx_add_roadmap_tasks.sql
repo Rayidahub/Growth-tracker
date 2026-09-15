@@ -10,12 +10,16 @@ CREATE TABLE IF NOT EXISTS public.task_completions (
   id          UUID        NOT NULL DEFAULT uuid_generate_v4(),
   user_id     UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   task_id     TEXT        NOT NULL,
-  task_date   DATE        NOT NULL,
+  task_date   DATE        NOT NULL DEFAULT CURRENT_DATE,
   completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
   CONSTRAINT task_completions_pkey PRIMARY KEY (id),
   CONSTRAINT task_completions_user_task_key UNIQUE (user_id, task_id)
 );
+
+-- Backfill columns that may be missing on existing partial tables
+ALTER TABLE public.task_completions
+  ADD COLUMN IF NOT EXISTS task_date DATE NOT NULL DEFAULT CURRENT_DATE;
 
 CREATE INDEX IF NOT EXISTS task_completions_user_id_idx ON public.task_completions(user_id);
 CREATE INDEX IF NOT EXISTS task_completions_task_date_idx ON public.task_completions(task_date DESC);
