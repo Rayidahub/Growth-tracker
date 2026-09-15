@@ -4,7 +4,7 @@
 // Editable profile form — name, phase, GitHub, portfolio, LinkedIn.
 // Saves directly to Supabase profiles table via client.
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -13,20 +13,25 @@ import { useToast } from '@/components/ui/Toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Github, Globe, Linkedin, User, CalendarDays, Loader2, Save, Lock, KeyRound, Eye, EyeOff } from 'lucide-react'
+import { Github, Globe, Linkedin, User, CalendarDays, Loader2, Save, Lock, KeyRound, Eye, EyeOff, Bell } from 'lucide-react'
 import { StackSelector } from './StackSelector'
+import { getPushSubscriptionState, subscribeToPush, unsubscribeFromPush, hasActivePushSubscription } from '@/lib/push/client'
 import type { Profile } from '@/types/database'
 
 const PHASES = ['Phase 1', 'Phase 2', 'Phase 3', 'Phase 4']
 
 const settingsSchema = z.object({
-  full_name:       z.string().min(1, 'Name is required').max(80),
-  current_phase:   z.enum(['Phase 1', 'Phase 2', 'Phase 3', 'Phase 4']),
-  start_date:      z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date'),
-  learning_stacks: z.array(z.string()).default([]),
-  github_username: z.string().max(39).nullable().optional(),
-  portfolio_url:   z.string().url('Enter a valid URL').or(z.literal('')).nullable().optional(),
-  linkedin_url:    z.string().url('Enter a valid URL').or(z.literal('')).nullable().optional(),
+  full_name:                   z.string().min(1, 'Name is required').max(80),
+  current_phase:               z.enum(['Phase 1', 'Phase 2', 'Phase 3', 'Phase 4']),
+  start_date:                  z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date'),
+  learning_stacks:             z.array(z.string()).default([]),
+  github_username:             z.string().max(39).nullable().optional(),
+  portfolio_url:               z.string().url('Enter a valid URL').or(z.literal('')).nullable().optional(),
+  linkedin_url:                z.string().url('Enter a valid URL').or(z.literal('')).nullable().optional(),
+  push_notifications_enabled:  z.boolean().default(false),
+  daily_reminder_enabled:      z.boolean().default(false),
+  weekly_recap_push_enabled:   z.boolean().default(false),
+  reminder_time:               z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time').default('09:00'),
 })
 
 type SettingsFormValues = z.infer<typeof settingsSchema>
@@ -39,6 +44,10 @@ interface SettingsFormProps {
 export function SettingsForm({ userId, profile }: SettingsFormProps) {
   const { toast } = useToast()
   const [isSaving, setIsSaving] = useState(false)
+  const [pushState, setPushState] = useState<NotificationPermission | 'unsupported'>('default')
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
+  const [isPushToggling, setIsPushToggling] = useState(false)
+  const [isSendingTestPush, setIsSendingTestPush] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -54,6 +63,11 @@ export function SettingsForm({ userId, profile }: SettingsFormProps) {
   const [isVerifyingCurrentPassword, setIsVerifyingCurrentPassword] = useState(false)
   const [currentPasswordVerified, setCurrentPasswordVerified] = useState(false)
 
+  useEffect(() => {
+    getPushSubscriptionState().then(setPushState)
+    hasActivePushSubscription().then(setHasActiveSubscription)
+  }, [])
+
   const {
     register,
     control,
@@ -62,13 +76,17 @@ export function SettingsForm({ userId, profile }: SettingsFormProps) {
   } = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
-      full_name:       profile?.full_name ?? '',
-      current_phase:   (profile?.current_phase as SettingsFormValues['current_phase']) ?? 'Phase 1',
-      start_date:      profile?.start_date ?? new Date().toISOString().slice(0, 10),
-      learning_stacks: profile?.learning_stacks ?? [],
-      github_username: profile?.github_username ?? '',
-      portfolio_url:   profile?.portfolio_url ?? '',
-      linkedin_url:    profile?.linkedin_url ?? '',
+      full_name:                   profile?.full_name ?? '',
+      current_phase:               (profile?.current_phase as SettingsFormValues['current_phase']) ?? 'Phase 1',
+      start_date:                  profile?.start_date ?? new Date().toISOString().slice(0, 10),
+      learning_stacks:             profile?.learning_stacks ?? [],
+      github_username:             profile?.github_username ?? '',
+      portfolio_url:               profile?.portfolio_url ?? '',
+      linkedin_url:                profile?.linkedin_url ?? '',
+      push_notifications_enabled:  profile?.push_notifications_enabled ?? false,
+      daily_reminder_enabled:      profile?.daily_reminder_enabled ?? false,
+      weekly_recap_push_enabled:   profile?.weekly_recap_push_enabled ?? false,
+      reminder_time:               profile?.reminder_time ?? '09:00',
     },
   })
 
@@ -79,13 +97,17 @@ export function SettingsForm({ userId, profile }: SettingsFormProps) {
     const { error } = await supabase
       .from('profiles')
       .update({
-        full_name:       values.full_name,
-        current_phase:   values.current_phase,
-        start_date:      values.start_date,
-        learning_stacks: values.learning_stacks,
-        github_username: values.github_username || null,
-        portfolio_url:   values.portfolio_url || null,
-        linkedin_url:    values.linkedin_url || null,
+        full_name:                   values.full_name,
+        current_phase:               values.current_phase,
+        start_date:                  values.start_date,
+        learning_stacks:             values.learning_stacks,
+        github_username:             values.github_username || null,
+        portfolio_url:               values.portfolio_url || null,
+        linkedin_url:                values.linkedin_url || null,
+        push_notifications_enabled:  values.push_notifications_enabled,
+        daily_reminder_enabled:      values.daily_reminder_enabled,
+        weekly_recap_push_enabled:   values.weekly_recap_push_enabled,
+        reminder_time:               values.reminder_time,
       })
       .eq('id', userId)
 
@@ -95,6 +117,47 @@ export function SettingsForm({ userId, profile }: SettingsFormProps) {
       toast({ variant: 'error', title: 'Save failed', description: error.message })
     } else {
       toast({ variant: 'success', title: 'Profile updated ✓' })
+    }
+  }
+
+  const togglePush = async () => {
+    setIsPushToggling(true)
+    try {
+      if (pushState === 'granted') {
+        await unsubscribeFromPush()
+        setPushState('default')
+        setHasActiveSubscription(false)
+        toast({ variant: 'success', title: 'Push notifications disabled' })
+      } else {
+        await subscribeToPush()
+        setPushState('granted')
+        setHasActiveSubscription(true)
+        toast({ variant: 'success', title: 'Push notifications enabled' })
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Push subscription failed'
+      toast({ variant: 'error', title: 'Push error', description: message })
+    } finally {
+      setIsPushToggling(false)
+    }
+  }
+
+  const sendTestPush = async () => {
+    setIsSendingTestPush(true)
+    try {
+      const res = await fetch('/api/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'ProductivityOS', body: 'This is a test push notification.' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to send')
+      toast({ variant: 'success', title: 'Test push sent', description: 'Check your notification tray.' })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to send test push'
+      toast({ variant: 'error', title: 'Test push failed', description: message })
+    } finally {
+      setIsSendingTestPush(false)
     }
   }
 
@@ -274,6 +337,101 @@ export function SettingsForm({ userId, profile }: SettingsFormProps) {
           )}
         />
         {errors.learning_stacks && <p className="text-xs text-red-400">{errors.learning_stacks.message}</p>}
+      </div>
+
+      {/* Push notifications */}
+      <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div>
+          <Label className="text-sm text-slate-300">Push Notifications</Label>
+          <p className="text-xs text-slate-600">
+            Browser push notifications for reminders and alerts.
+          </p>
+        </div>
+
+        {pushState === 'unsupported' ? (
+          <p className="text-xs text-slate-500">Push notifications are not supported in this browser.</p>
+        ) : (
+          <>
+            <label className="flex items-center justify-between gap-3">
+              <span className="text-sm text-slate-300">Enable push notifications</span>
+              <input type="checkbox" {...register('push_notifications_enabled')} className="h-5 w-5 accent-indigo-500 rounded border-white/10 bg-white/5" />
+            </label>
+
+            <div className="space-y-2 pl-4 border-l border-white/10">
+              <label className="flex items-center justify-between gap-3">
+                <span className="text-sm text-slate-400">Daily reminder</span>
+                <input type="checkbox" {...register('daily_reminder_enabled')} className="h-5 w-5 accent-indigo-500 rounded border-white/10 bg-white/5" />
+              </label>
+
+              <label className="flex items-center justify-between gap-3">
+                <span className="text-sm text-slate-400">Weekly recap ready</span>
+                <input type="checkbox" {...register('weekly_recap_push_enabled')} className="h-5 w-5 accent-indigo-500 rounded border-white/10 bg-white/5" />
+              </label>
+            </div>
+
+            <div className="space-y-1.5 pt-1">
+              <Label className="text-xs text-slate-500">Reminder time</Label>
+              <Input
+                type="time"
+                {...register('reminder_time')}
+                className="h-10 w-32 rounded-xl border-white/10 bg-white/5 text-white focus:border-indigo-500 [color-scheme:dark]"
+              />
+              {errors.reminder_time && <p className="text-xs text-red-400">{errors.reminder_time.message}</p>}
+            </div>
+
+            <div className="flex items-center gap-3 pt-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={togglePush}
+                disabled={isPushToggling || pushState === 'denied'}
+                className="rounded-xl border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white disabled:opacity-50"
+              >
+                {isPushToggling ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Bell className="mr-2 h-4 w-4" />
+                )}
+                {pushState === 'granted' ? 'Unsubscribe browser' : pushState === 'denied' ? 'Blocked' : 'Subscribe browser'}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={sendTestPush}
+                disabled={isSendingTestPush || !hasActiveSubscription}
+                className="rounded-xl border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white disabled:opacity-50"
+              >
+                {isSendingTestPush ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Bell className="mr-2 h-4 w-4" />
+                )}
+                Send test push
+              </Button>
+            </div>
+
+            {!hasActiveSubscription && (
+              <p className="text-xs text-slate-500">
+                Subscribe this browser before sending a test push.
+              </p>
+            )}
+
+            {hasActiveSubscription && (
+              <p className="text-xs text-emerald-400">
+                This browser is subscribed to push notifications.
+              </p>
+            )}
+
+            {pushState === 'denied' && (
+              <p className="text-xs text-red-400">
+                Notification permission is blocked. Enable it in your browser site settings to subscribe.
+              </p>
+            )}
+          </>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

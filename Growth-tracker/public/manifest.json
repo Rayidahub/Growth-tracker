@@ -1,0 +1,25 @@
+{
+  "name": "ProductivityOS",
+  "short_name": "ProductivityOS",
+  "description": "96-week engineering growth tracker with daily logs, personalised roadmap and AI weekly recaps.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0a0f1e",
+  "theme_color": "#0a0f1e",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
